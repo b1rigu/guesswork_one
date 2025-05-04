@@ -44,7 +44,6 @@ static void get_next_nodes_to_explore(const int numPoints, const int *symIndexLi
 
     while (true) {
         bool foundFirstSymmetric = false;
-        bool foundFirstNonSymmetric = false;
         int newRefColumn = -1;
 
         int refImages[MAX_SYM_GROUP_SIZE];
@@ -71,19 +70,16 @@ static void get_next_nodes_to_explore(const int numPoints, const int *symIndexLi
                 }
                 resultDecidedNodes[candidate] = true;
             } else {
-                if (!foundFirstNonSymmetric) {
+                if (newRefColumn == -1) {
                     out->data[out->size++] = candidate;
-                    foundFirstNonSymmetric = true;
-                    newRefColumn = candidate;
+                    refColumn = newRefColumn;
                     resultDecidedNodes[candidate] = true;
                 }
             }
         }
 
-        if (foundFirstNonSymmetric) {
-            refColumn = newRefColumn;
-        } else {
-            break;  // all remaining were symmetric → done
+        if (newRefColumn == -1) {
+            break; // all remaining were symmetric → done
         }
     }
 };
