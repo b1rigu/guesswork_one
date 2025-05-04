@@ -1,0 +1,22 @@
+{
+  "C_Cpp.default.compilerPath": "/usr/local/gcc-14.2.0/bin/gcc-14.2.0",
+  "files.associations": {
+    "*.css": "tailwindcss",
+    "vect.h": "c",
+    "stdlib.h": "c",
+    "ring.h": "c",
+    "stdbool.h": "c",
+    "symmetry.h": "c",
+    "stdio.h": "c",
+    "string.h": "c",
+    "array": "c",
+    "string_view": "c",
+    "initializer_list": "c",
+    "span": "c",
+    "format": "c",
+    "utils.h": "c"
+  },
+  "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  }
+}
