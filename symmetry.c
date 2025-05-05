@@ -7,6 +7,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct {
+    int pointIndex;
+    ring norm2;
+} PointWithNorm;
+
+typedef struct {
+    int coeffIdx;      // original signed
+    int coeffSquared;  // coeff * coeff
+} CoeffWithSquare;
+
+PointWithNorm pointData[MAX_POINTS];
+CoeffWithSquare coeffData[MAX_POINTS];
 bool alreadyUsedNodes[MAX_POINTS] = {false};
 bool resultDecidedNodes[MAX_POINTS] = {false};
 int VArray[MAX_POINTS] = {0};
@@ -98,7 +110,7 @@ static void get_next_symmetry_group(const int *symIndexListToSearch, int symInde
     }
 }
 
-static void vect_scale(vect *res, const vect point, int numPoints, int VArrayIdx, vect vector) {
+static void vect_scale(vect *res, const vect point, int VArrayIdx, const vect vector) {
     vect tmp;
     for (int j = 0; j < 3; j++) {
         if (ckd_mul(&tmp[j][0], VArray[VArrayIdx], point[j][0]) || ckd_mul(&tmp[j][1], VArray[VArrayIdx], point[j][1]))
@@ -118,9 +130,81 @@ static void evaluate_permutation(vect currentScaledVector, int numPoints, ring *
     }
 }
 
+int compare_norm2_desc(const void *a, const void *b) {
+    const PointWithNorm *pa = a, *pb = b;
+    return -ring_comp(pa->norm2, pb->norm2);  // Descending
+}
+
+int compare_coeff2_desc(const void *a, const void *b) {
+    const CoeffWithSquare *ca = a, *cb = b;
+    return cb->coeffSquared - ca->coeffSquared;
+}
+
+static bool calculate_upper_bound(int depth, const int numPoints, const vect *points,
+                                  const vect currentScaledVectorAtDepth, const ring *bestVectorLength,
+                                  const int chosen) {
+    vect partial_sum;
+    vect_scale(&partial_sum, points[chosen], depth, currentScaledVectorAtDepth);
+
+    int pointsLeftToChoose = 0;
+    int VArrayLeftToCalcCount = 0;
+
+    for (int g = 0; g < numPoints; ++g) {
+        if (g > depth) {
+            coeffData[VArrayLeftToCalcCount].coeffIdx = g;
+            coeffData[VArrayLeftToCalcCount].coeffSquared = VArray[g] * VArray[g];
+            VArrayLeftToCalcCount++;
+        }
+        if (alreadyUsedNodes[g] || g == chosen) continue;
+        pointData[pointsLeftToChoose].pointIndex = g;
+        vect_norm2(pointData[pointsLeftToChoose].norm2, points[g]);
+        pointsLeftToChoose++;
+    }
+
+    qsort(&coeffData, VArrayLeftToCalcCount, sizeof(CoeffWithSquare), compare_coeff2_desc);
+    qsort(&pointData, pointsLeftToChoose, sizeof(PointWithNorm), compare_norm2_desc);
+
+    vect max_comp = {{0, 0}, {0, 0}, {0, 0}};
+    for (int i = 0; i < 3; i++) {
+        max_comp[i][0] = partial_sum[i][0];
+        max_comp[i][1] = partial_sum[i][1];
+
+        // Calculate sum of absolute contributions for each component
+        scal abs_contrib_0 = 0;
+        scal abs_contrib_1 = 0;
+
+        for (int g = 0; g < pointsLeftToChoose; ++g) {
+            int coeffPos = coeffData[g].coeffIdx;
+            int pointIdx = pointData[g].pointIndex;
+
+            scal prod_0, prod_1;
+            if (ckd_mul(&prod_0, VArray[coeffPos], points[pointIdx][i][0]) ||
+                ckd_mul(&prod_1, VArray[coeffPos], points[pointIdx][i][1]))
+                exit(1);
+
+            abs_contrib_0 += (prod_0 > 0) ? prod_0 : -prod_0;
+            abs_contrib_1 += (prod_1 > 0) ? prod_1 : -prod_1;
+        }
+
+        // Add to the component-wise upper bound
+        max_comp[i][0] += abs_contrib_0;
+        max_comp[i][1] += abs_contrib_1;
+    }
+
+    ring comp_norm;
+    vect_norm2(comp_norm, max_comp);
+
+    comp_norm[0] += 1;
+
+    return ring_comp(comp_norm, *bestVectorLength) <= 0;
+}
+
+int count = 0;
+
 static void find_best_permutation(int depth, const int numPoints, const int *symIndexListToSearch,
                                   const int symIndexListToSearchLength, const vect *points, ring *bestVectorLength,
                                   int *bestPermutation, vect currentScaledVectorAtDepth) {
+    count++;
     if (depth == numPoints) {
         evaluate_permutation(currentScaledVectorAtDepth, numPoints, bestVectorLength, bestPermutation);
         return;
@@ -131,29 +215,16 @@ static void find_best_permutation(int depth, const int numPoints, const int *sym
 
     for (int i = 0; i < nodes_to_explore.size; ++i) {
         int chosen = nodes_to_explore.data[i];
-        if ((*bestVectorLength)[0] != -1 || (*bestVectorLength)[1] != -1) {
-            
-        }
+        // if ((*bestVectorLength)[0] != -1 || (*bestVectorLength)[1] != -1) {
+        //     if (calculate_upper_bound(depth, numPoints, points, currentScaledVectorAtDepth, bestVectorLength, chosen)) {
+        //         continue;  // Skip this branch if upper bound is not promising
+        //     }
+        // }
         alreadyUsedNodes[chosen] = true;
         currentPermutation[depth] = chosen;
 
-        // printf("best vector length: ");
-        // printf("ring: [%lld, %lld]\n", (*bestVectorLength)[0], (*bestVectorLength)[1]);
-        // puts("");
-        // printf("Nodes to explore at depth %d :", depth);
-        // for (int i = 0; i < nodes_to_explore.size; ++i) printf(" %d", nodes_to_explore.data[i]);
-        // puts("");
-        // printf("Chosen node: %d\n", chosen);
-
         vect nextVectScaled;
-        vect_scale(&nextVectScaled, points[chosen], numPoints, depth, currentScaledVectorAtDepth);
-
-        // printf("nextVectScaled: ");
-        // for (int i = 0; i < 3; i++) {
-        //     printf("%lld ", nextVectScaled[i][0]);
-        //     printf("%lld ", nextVectScaled[i][1]);
-        // }
-        // puts("");
+        vect_scale(&nextVectScaled, points[chosen], depth, currentScaledVectorAtDepth);
 
         MyArray nextSymIndexList;
         get_next_symmetry_group(symIndexListToSearch, symIndexListToSearchLength, numPoints, chosen, &nextSymIndexList);
@@ -212,4 +283,6 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
     vect currentScaledVectorAtDepth = {{0, 0}, {0, 0}, {0, 0}};
     find_best_permutation(0, numPoints, symIndexListToSearch, symmetryGroupSize, points, bestVectorLength,
                           bestPermutation, currentScaledVectorAtDepth);
+
+    printf("Total Runtime Count: %d\n", count);
 }
