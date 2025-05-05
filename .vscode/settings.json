@@ -14,7 +14,8 @@
     "initializer_list": "c",
     "span": "c",
     "format": "c",
-    "utils.h": "c"
+    "utils.h": "c",
+    "vector": "c"
   },
   "[c]": {
     "editor.defaultFormatter": "ms-vscode.cpptools"
