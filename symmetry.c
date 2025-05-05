@@ -7,18 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct {
-    int pointIndex;
-    ring norm2;
-} PointWithNorm;
-
-typedef struct {
-    int coeffIdx;      // original signed
-    int coeffSquared;  // coeff * coeff
-} CoeffWithSquare;
-
-PointWithNorm pointData[MAX_POINTS];
-CoeffWithSquare coeffData[MAX_POINTS];
 bool alreadyUsedNodes[MAX_POINTS] = {false};
 bool resultDecidedNodes[MAX_POINTS] = {false};
 int VArray[MAX_POINTS] = {0};
@@ -35,16 +23,6 @@ static void generate_zero_sum_array(int numPoints, int *VArray) {
     for (int i = 0; i < numPoints; ++i) {
         VArray[i] = start - 2 * i;
     }
-}
-
-int compare_norm2_desc(const void *a, const void *b) {
-    const PointWithNorm *pa = a, *pb = b;
-    return -ring_comp(pa->norm2, pb->norm2);  // Descending
-}
-
-int compare_coeff2_desc(const void *a, const void *b) {
-    const CoeffWithSquare *ca = a, *cb = b;
-    return cb->coeffSquared - ca->coeffSquared;
 }
 
 static void get_next_nodes_to_explore(const int numPoints, const int *symIndexListToSearch,
@@ -140,13 +118,6 @@ static void evaluate_permutation(vect currentScaledVector, int numPoints, ring *
     }
 }
 
-static long long ring_sqrt_estimate(const ring r) {
-    // Convert ring = [high, low] to a 64-bit float estimate of norm²
-    // Use double to safely hold all 64 bits
-    double combined = (double)r[0] * (1ULL << 32) * (1ULL << 32) + (double)r[1];
-    return (long long)sqrt(combined);  // Safe overestimate
-}
-
 static void find_best_permutation(int depth, const int numPoints, const int *symIndexListToSearch,
                                   const int symIndexListToSearchLength, const vect *points, ring *bestVectorLength,
                                   int *bestPermutation, vect currentScaledVectorAtDepth) {
@@ -161,98 +132,7 @@ static void find_best_permutation(int depth, const int numPoints, const int *sym
     for (int i = 0; i < nodes_to_explore.size; ++i) {
         int chosen = nodes_to_explore.data[i];
         if ((*bestVectorLength)[0] != -1 || (*bestVectorLength)[1] != -1) {
-            // vect partial_sum;
-            // vect_scale(&partial_sum, points[chosen], numPoints, depth, currentScaledVectorAtDepth);
-
-            // ring p2;
-            // vect_norm2(p2, partial_sum);
-            // long long P = ring_sqrt_estimate(p2);
-
-            // long long S = 0;
-
-            // int pointsLeftToChoose = 0;
-            // int pointsIdxList[MAX_POINTS];
-
-            // for (int g = 0; g < numPoints; ++g) {
-            //     if (alreadyUsedNodes[g] || g == chosen) continue;
-            //     pointsIdxList[pointsLeftToChoose] = g;
-            //     pointsLeftToChoose++;
-            // }
-
-            // for (int g = 0; g < pointsLeftToChoose; ++g) {
-            //     int pointIdx = pointsIdxList[g];
-
-            //     ring v2;
-            //     vect_norm2(v2, points[pointIdx]);
-            //     long long V = ring_sqrt_estimate(v2);
-
-            //     S += llabs(VArray[depth + 1 + g]) * V;
-            // }
-
-            // long long total = P + S;
-
-            // ring bound = {total * total, 0};
-
-            // if (ring_comp(bound, *bestVectorLength) <= 0) {
-            //     continue;
-            // }
-
-            // OLD VERSION TO PRUNE
-            // int pointsLeftToChoose = 0;
-            // int VArrayLeftToCalcCount = 0;
-
-            // for (int g = 0; g < numPoints; ++g) {
-            //     if (g > depth) {
-            //         coeffData[VArrayLeftToCalcCount].coeffIdx = g;
-            //         coeffData[VArrayLeftToCalcCount].coeffSquared = VArray[g] * VArray[g];
-            //         VArrayLeftToCalcCount++;
-            //     }
-            //     if (alreadyUsedNodes[g] || g == chosen) continue;
-            //     pointData[pointsLeftToChoose].pointIndex = g;
-            //     vect_norm2(pointData[pointsLeftToChoose].norm2, points[g]);
-            //     pointsLeftToChoose++;
-            // }
-
-            // if (pointsLeftToChoose != VArrayLeftToCalcCount) {
-            //     puts("count mismatch");
-            //     exit(1);
-            // }
-
-            // qsort(&coeffData, VArrayLeftToCalcCount, sizeof(CoeffWithSquare), compare_coeff2_desc);
-            // qsort(&pointData, pointsLeftToChoose, sizeof(PointWithNorm), compare_norm2_desc);
-
-            // // printf("coeffDataSquared: ");
-            // // for (int g = 0; g < VArrayLeftToCalcCount; ++g) {
-            // //     printf("%d ", coeffData[g].coeffSquared);
-            // // }
-            // // puts("");
-
-            // // printf("pointData: ");
-            // // for (int g = 0; g < pointsLeftToChoose; ++g) {
-            // //     printf("[%lld, %lld], ", pointData[g].norm2[0], pointData[g].norm2[1]);
-            // // }
-            // // puts("");
-
-            // vect greedy_sum = {{0, 0}, {0, 0}, {0, 0}};
-
-            // for (int g = 0; g < pointsLeftToChoose; ++g) {
-            //     int coeffIdx = coeffData[g].coeffIdx;
-            //     int pointIdx = pointData[g].pointIndex;
-            //     vect_scale(&greedy_sum, points[pointIdx], numPoints, coeffIdx, greedy_sum);
-            // }
-
-            // vect total_sum;
-            // vect_add(total_sum, partial_sum, greedy_sum);
-
-            // ring total;
-            // vect_norm2(total, total_sum);
-
-            // // printf("total: [%lld, %lld]\n", total[0], total[1]);
-            // // printf("current best: [%lld, %lld]\n\n", (*bestVectorLength)[0], (*bestVectorLength)[1]);
-
-            // if (ring_comp(total, *bestVectorLength) < 0) {
-            //     continue;
-            // }
+            
         }
         alreadyUsedNodes[chosen] = true;
         currentPermutation[depth] = chosen;
