@@ -215,11 +215,11 @@ static void find_best_permutation(int depth, const int numPoints, const int *sym
 
     for (int i = 0; i < nodes_to_explore.size; ++i) {
         int chosen = nodes_to_explore.data[i];
-        // if ((*bestVectorLength)[0] != -1 || (*bestVectorLength)[1] != -1) {
-        //     if (calculate_upper_bound(depth, numPoints, points, currentScaledVectorAtDepth, bestVectorLength, chosen)) {
-        //         continue;  // Skip this branch if upper bound is not promising
-        //     }
-        // }
+        if ((*bestVectorLength)[0] != -1 || (*bestVectorLength)[1] != -1) {
+            if (calculate_upper_bound(depth, numPoints, points, currentScaledVectorAtDepth, bestVectorLength, chosen)) {
+                continue;  // Skip this branch if upper bound is not promising
+            }
+        }
         alreadyUsedNodes[chosen] = true;
         currentPermutation[depth] = chosen;
 
