@@ -15,7 +15,8 @@
     "span": "c",
     "format": "c",
     "utils.h": "c",
-    "vector": "c"
+    "vector": "c",
+    "algorithm": "c"
   },
   "[c]": {
     "editor.defaultFormatter": "ms-vscode.cpptools"

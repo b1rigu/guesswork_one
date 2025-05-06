@@ -24,6 +24,8 @@ bool resultDecidedNodes[MAX_POINTS] = {false};
 int VArray[MAX_POINTS] = {0};
 int currentPermutation[MAX_POINTS] = {0};
 int symmetryGroup[MAX_POINTS * MAX_SYM_GROUP_SIZE] = {0};
+int program_subloops = 0;
+int program_mainloops = 0;
 
 // row 0 :  table[0*N + 0]  table[0*N + 1] … table[0*N + N-1]
 // row 1 :  table[1*N + 0]  table[1*N + 1] … table[1*N + N-1]
@@ -41,58 +43,23 @@ static void get_next_nodes_to_explore(const int numPoints, const int *symIndexLi
                                       const int symIndexListToSearchLength, MyArray *out) {
     out->size = 0;
 
-    memset(resultDecidedNodes, false, numPoints * sizeof(bool));
-
-    int refColumn = -1;
-
-    // Find the leftmost unused column
+    bool inSomeOrbit[MAX_POINTS] = {false};
+    bool isFirstOrbit = true;
     for (int col = 0; col < numPoints; ++col) {
-        if (!alreadyUsedNodes[col]) {
-            refColumn = col;
-            break;
-        }
-    }
-
-    if (refColumn == -1) return;
-
-    while (true) {
-        bool foundFirstSymmetric = false;
-        int newRefColumn = -1;
-
-        int refImages[MAX_SYM_GROUP_SIZE];
-        for (int i = 0; i < symIndexListToSearchLength; ++i) {
-            refImages[i] = SYM_IMAGE(symmetryGroup, symIndexListToSearch[i], numPoints, refColumn);
-        }
-
-        for (int candidate = 0; candidate < numPoints; ++candidate) {
-            if (alreadyUsedNodes[candidate] || resultDecidedNodes[candidate]) continue;
-
-            bool symmetryFound = false;
+        if (!alreadyUsedNodes[col] && !inSomeOrbit[col]) {
+            out->data[out->size++] = col;
+            inSomeOrbit[col] = true;
 
             for (int i = 0; i < symIndexListToSearchLength; ++i) {
-                if (refImages[i] == candidate) {
-                    symmetryFound = true;
-                    break;
+                program_subloops++;
+                int symIdx = symIndexListToSearch[i];
+                int image = SYM_IMAGE(symmetryGroup, symIdx, numPoints, col);
+                if (isFirstOrbit || image == col) {
+                    inSomeOrbit[image] = true;
                 }
             }
-
-            if (symmetryFound) {
-                if (!foundFirstSymmetric) {
-                    out->data[out->size++] = candidate;
-                    foundFirstSymmetric = true;
-                }
-                resultDecidedNodes[candidate] = true;
-            } else {
-                if (newRefColumn == -1) {
-                    out->data[out->size++] = candidate;
-                    refColumn = newRefColumn;
-                    resultDecidedNodes[candidate] = true;
-                }
-            }
-        }
-
-        if (newRefColumn == -1) {
-            break;  // all remaining were symmetric → done
+            isFirstOrbit = false;
+            program_subloops++;
         }
     }
 };
@@ -107,12 +74,14 @@ static void get_next_symmetry_group(const int *symIndexListToSearch, int symInde
         if (img == chosen) {
             out->data[out->size++] = idx;
         }
+        program_subloops++;
     }
 }
 
 static void vect_scale(vect *res, const vect point, int VArrayIdx, const vect vector) {
     vect tmp;
     for (int j = 0; j < 3; j++) {
+        program_subloops++;
         if (ckd_mul(&tmp[j][0], VArray[VArrayIdx], point[j][0]) || ckd_mul(&tmp[j][1], VArray[VArrayIdx], point[j][1]))
             exit(1);
     }
@@ -150,6 +119,7 @@ static bool calculate_upper_bound(int depth, const int numPoints, const vect *po
     int VArrayLeftToCalcCount = 0;
 
     for (int g = 0; g < numPoints; ++g) {
+        program_subloops++;
         if (g > depth) {
             coeffData[VArrayLeftToCalcCount].coeffIdx = g;
             coeffData[VArrayLeftToCalcCount].coeffSquared = VArray[g] * VArray[g];
@@ -166,6 +136,7 @@ static bool calculate_upper_bound(int depth, const int numPoints, const vect *po
 
     vect max_comp = {{0, 0}, {0, 0}, {0, 0}};
     for (int i = 0; i < 3; i++) {
+        program_subloops++;
         max_comp[i][0] = partial_sum[i][0];
         max_comp[i][1] = partial_sum[i][1];
 
@@ -174,6 +145,7 @@ static bool calculate_upper_bound(int depth, const int numPoints, const vect *po
         scal abs_contrib_1 = 0;
 
         for (int g = 0; g < pointsLeftToChoose; ++g) {
+            program_subloops++;
             int coeffPos = coeffData[g].coeffIdx;
             int pointIdx = pointData[g].pointIndex;
 
@@ -199,12 +171,10 @@ static bool calculate_upper_bound(int depth, const int numPoints, const vect *po
     return ring_comp(comp_norm, *bestVectorLength) <= 0;
 }
 
-int count = 0;
-
 static void find_best_permutation(int depth, const int numPoints, const int *symIndexListToSearch,
                                   const int symIndexListToSearchLength, const vect *points, ring *bestVectorLength,
                                   int *bestPermutation, vect currentScaledVectorAtDepth) {
-    count++;
+    program_mainloops++;
     if (depth == numPoints) {
         evaluate_permutation(currentScaledVectorAtDepth, numPoints, bestVectorLength, bestPermutation);
         return;
@@ -216,7 +186,8 @@ static void find_best_permutation(int depth, const int numPoints, const int *sym
     for (int i = 0; i < nodes_to_explore.size; ++i) {
         int chosen = nodes_to_explore.data[i];
         if ((*bestVectorLength)[0] != -1 || (*bestVectorLength)[1] != -1) {
-            if (calculate_upper_bound(depth, numPoints, points, currentScaledVectorAtDepth, bestVectorLength, chosen)) {
+            if (calculate_upper_bound(depth, numPoints, points, currentScaledVectorAtDepth, bestVectorLength,
+            chosen)) {
                 continue;  // Skip this branch if upper bound is not promising
             }
         }
@@ -265,10 +236,6 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
     }
     printf("\n");
 
-    for (int i = 0; i < numPoints; ++i) {
-        alreadyUsedNodes[i] = false;
-    }
-
     int symIndexListToSearch[MAX_SYM_GROUP_SIZE];
     for (int g = 0; g < symmetryGroupSize; ++g) {
         symIndexListToSearch[g] = g;
@@ -284,5 +251,6 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
     find_best_permutation(0, numPoints, symIndexListToSearch, symmetryGroupSize, points, bestVectorLength,
                           bestPermutation, currentScaledVectorAtDepth);
 
-    printf("Total Runtime Count: %d\n", count);
+    printf("Total Runtime Count subloops: %d\n", program_subloops);
+    printf("Total Runtime Count mainloops: %d\n", program_mainloops);
 }
