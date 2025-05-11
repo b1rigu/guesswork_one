@@ -2,9 +2,11 @@
 #include <stdlib.h>
 
 #include "symmetry.h"
+#include "utils.h"
 
 vect points[MAX_POINTS];
 int bestPermutation[MAX_POINTS];
+int VArray[MAX_POINTS];
 
 int main() {
     int numPoints = nextInt();
@@ -15,9 +17,11 @@ int main() {
         }
     }
 
+    generate_zero_sum_array(numPoints, VArray);
+
     ring bestVectorLength = {-1, -1};
 
-    use_symmetry(numPoints, points, &bestVectorLength, bestPermutation);
+    use_symmetry(numPoints, points, &bestVectorLength, bestPermutation, VArray);
 
     printf("Best squared length: (%lld, %lld)\n", bestVectorLength[0], bestVectorLength[1]);
     printf("Best permutation: ");

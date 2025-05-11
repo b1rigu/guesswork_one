@@ -1,4 +1,6 @@
 #include "vect.h"
+#include <stdckdint.h>
+#include <stdlib.h>
 
 void vect_add(vect res, const vect v0, const vect v1) {
     for (int i = 0; i < 3; i++) {
@@ -54,4 +56,12 @@ int vect_comp(const vect v0, const vect v1) {
     vect_norm2(norm0, v0);
     vect_norm2(norm1, v1);
     return ring_comp(norm0, norm1);
+}
+
+void vect_scale(vect *res, const vect point, int coeff, const vect vector) {
+    vect tmp;
+    for (int j = 0; j < 3; j++) {
+        if (ckd_mul(&tmp[j][0], coeff, point[j][0]) || ckd_mul(&tmp[j][1], coeff, point[j][1])) exit(1);
+    }
+    vect_add(*res, vector, tmp);
 }

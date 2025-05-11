@@ -10,4 +10,6 @@ int nextInt();
 // Function to safely read a long long integer from input
 long long nextLL();
 
+void generate_zero_sum_array(int numPoints, int *VArray);
+
 #endif

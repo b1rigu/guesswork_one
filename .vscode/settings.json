@@ -16,7 +16,8 @@
     "format": "c",
     "utils.h": "c",
     "vector": "c",
-    "algorithm": "c"
+    "algorithm": "c",
+    "stdckdint.h": "c"
   },
   "[c]": {
     "editor.defaultFormatter": "ms-vscode.cpptools"

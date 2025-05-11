@@ -15,6 +15,6 @@ typedef struct {
     int size;
 } MyArray;
 
-void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *bestPermutation);
+void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *bestPermutation, int *VArray);
 
 #endif
