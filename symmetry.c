@@ -101,13 +101,6 @@ static void find_best_permutation(int depth, const int numPoints, const vect *po
     }
 }
 
-void initSymmetryMap(SymmetryMap *map) {
-    map->indexListSize = 0;
-    for (int i = 0; i < MAX_POINTS; i++) {
-        map->children[i] = NULL;
-    }
-}
-
 SymmetryMap *getNewNode() {
     if (nextFreeNode >= MAX_POINTS * MAX_POINTS) {
         // Error: out of nodes
@@ -115,7 +108,10 @@ SymmetryMap *getNewNode() {
     }
 
     SymmetryMap *newNode = &allNodes[nextFreeNode++];
-    initSymmetryMap(newNode);
+    newNode->indexListSize = 0;
+    for (int i = 0; i < MAX_POINTS; i++) {
+        newNode->children[i] = NULL;
+    }
     return newNode;
 }
 
