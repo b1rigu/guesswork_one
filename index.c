@@ -17,6 +17,17 @@ int main() {
         }
     }
 
+    printf("Number of points: %d\n", numPoints);
+    printf("points:\n");
+    for (int i = 0; i < numPoints; i++) {
+        for (int j = 0; j < 3; j++) {
+            printf("%d ", points[i][j][0]);
+            printf("%d ", points[i][j][1]);
+        }
+        printf(", ");
+    }
+    printf("\n");
+
     generate_zero_sum_array(numPoints, VArray);
 
     ring bestVectorLength = {-1, -1};

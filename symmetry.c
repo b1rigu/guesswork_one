@@ -14,25 +14,18 @@ typedef struct SymmetryMap {
     struct SymmetryMap *children[MAX_POINTS];
 } SymmetryMap;
 
-SymmetryMap allNodes[MAX_POINTS * MAX_POINTS];
+SymmetryMap allNodes[MAX_POINTS * MAX_POINTS * 100];
 int nextFreeNode = 0;
 
 int program_subloops = 0;
 int program_mainloops = 0;
 
 int centralSymmetryTracker[100] = {-1};
-ring pointNorms[MAX_POINTS];
 
 // row 0 :  table[0*N + 0]  table[0*N + 1] … table[0*N + N-1]
 // row 1 :  table[1*N + 0]  table[1*N + 1] … table[1*N + N-1]
 // row 2 :  ...
 #define SYM_IMAGE(table, row, N, column) ((table)[(size_t)(row) * (N) + (column)])
-
-void precompute_point_norms(const vect *points, int numPoints, ring *pointNorms) {
-    for (int i = 0; i < numPoints; ++i) {
-        vect_norm2(pointNorms[i], points[i]);  // assumes vect_norm2(dest, vect)
-    }
-}
 
 static void get_next_nodes_to_explore(const int numPoints, const int *symIndexListToSearch,
                                       const int symIndexListToSearchLength, MyArray *out, bool *alreadyUsedNodes,
@@ -83,8 +76,8 @@ static void evaluate_permutation(vect currentScaledVector, int numPoints, ring *
 }
 
 static bool calculate_upper_bound(int depth, int numPoints, const vect *points, const vect currentScaledVectorAtDepth,
-                                  const ring *bestVectorLength, const int *VArray, const ring *pointNorms,
-                                  const bool *alreadyUsedNodes, const int chosen, const MyArray *centralSymmetryList) {
+                                  const ring *bestVectorLength, const int *VArray, const bool *alreadyUsedNodes,
+                                  const int chosen, const MyArray *centralSymmetryList) {
     int mirror = centralSymmetryList->data[chosen];
     vect partial_sum;
     vect_scale(&partial_sum, points[chosen], VArray[depth], currentScaledVectorAtDepth);
@@ -163,7 +156,7 @@ static void find_best_permutation(int depth, const int numPoints, const vect *po
         if (root != NULL && root->indexListSize > 0 && root->children[candidate] == NULL) continue;
         if ((*bestVectorLength)[0] != -1 || (*bestVectorLength)[1] != -1) {
             if (!calculate_upper_bound(depth, numPoints, points, currentScaledVectorAtDepth, bestVectorLength, VArray,
-                                       pointNorms, alreadyUsedNodes, candidate, centralSymmetryList)) {
+                                       alreadyUsedNodes, candidate, centralSymmetryList)) {
                 continue;  // Skip this branch if upper bound is not promising
             }
         }
@@ -189,7 +182,7 @@ static void find_best_permutation(int depth, const int numPoints, const vect *po
 }
 
 SymmetryMap *getNewNode() {
-    if (nextFreeNode >= MAX_POINTS * MAX_POINTS) {
+    if (nextFreeNode >= MAX_POINTS * MAX_POINTS * 100) {
         // Error: out of nodes
         return NULL;
     }
@@ -263,7 +256,6 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
     bool alreadyUsedNodes[MAX_POINTS] = {false};
     int currentPermutation[MAX_POINTS] = {0};
     int symmetryGroup[MAX_POINTS * MAX_SYM_GROUP_SIZE];
-    precompute_point_norms(points, numPoints, pointNorms);
 
     int symmetryGroupSize = nextInt();
     for (int g = 0; g < symmetryGroupSize; g++) {

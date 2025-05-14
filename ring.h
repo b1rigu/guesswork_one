@@ -1,7 +1,7 @@
 #ifndef RING_H
 #define RING_H
 
-#define our_k 5
+#define our_k 2
 
 typedef long long scal;
 
