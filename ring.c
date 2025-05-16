@@ -19,6 +19,11 @@ void ring_mul(ring z, const ring x, const ring y) {  // z[0]=x[0]*y[0]+k*x[1]*y[
     if (ckd_mul(&z[1], x[0], y[1]) || ckd_mul(&tmp, x[1], y[0]) || ckd_add(&z[1], z[1], tmp)) exit(1);
 }
 
+void ring_scale(ring z, const ring x, int coeff) {
+    scal tmp;
+    if (ckd_mul(&z[0], x[0], coeff) || ckd_mul(&z[1], x[1], coeff)) exit(1);
+}
+
 int ring_sign(const scal x) {
     if (x > 0)
         return 1;
