@@ -1,0 +1,90 @@
+Number of points: 4
+points:
+1 0 0 0 0 0 , 0 0 1 0 0 0 , -1 0 0 0 0 0 , 0 0 -1 0 0 0 , 
+varray: 3 1 -1 -3 
+coeff sum on depths
+4 1 
+Is centrally symmetric: 1
+symmetry map prep done
+Symmetry prep loops: 9
+Total Runtime Count subloops: 9
+Total Runtime Count mainloops: 3
+Time spent: 0.000004
+Best squared length: (40, 0)
+Best permutation: 0 1 3 2 
+
+Number of points: 4
+points:
+1 0 0 0 0 0 , 0 0 1 0 0 0 , -1 0 0 0 0 0 , 0 0 -1 0 0 0 , 
+varray: 3 1 -1 -3 
+coeff sum on depths
+4 1 
+Is centrally symmetric: 1
+symmetry map prep done
+Symmetry prep loops: 9
+Total Runtime Count subloops: 9
+Total Runtime Count mainloops: 3
+Time spent: 0.000002
+Best squared length: (40, 0)
+Best permutation: 0 1 3 2 
+
+Number of points: 4
+points:
+1 0 0 0 0 0 , 0 0 1 0 0 0 , -1 0 0 0 0 0 , 0 0 -1 0 0 0 , 
+varray: 3 1 -1 -3 
+coeff sum on depths
+4 1 
+Is centrally symmetric: 1
+symmetry map prep done
+Symmetry prep loops: 9
+Total Runtime Count subloops: 9
+Total Runtime Count mainloops: 3
+Time spent: 0.000003
+Best squared length: (40, 0)
+Best permutation: 0 1 3 2 
+
+Number of points: 24
+points:
+-1 1 1 0 1 0 , 1 -1 -1 0 -1 0 , -1 1 1 0 -1 0 , 1 -1 -1 0 1 0 , -1 1 -1 0 1 0 , 1 -1 1 0 -1 0 , 1 -1 1 0 1 0 , -1 1 -1 0 -1 0 , 1 0 -1 1 1 0 , -1 0 1 -1 -1 0 , 1 0 -1 1 -1 0 , -1 0 1 -1 1 0 , -1 0 -1 1 1 0 , 1 0 1 -1 -1 0 , 1 0 1 -1 1 0 , -1 0 -1 1 -1 0 , 1 0 1 0 -1 1 , -1 0 -1 0 1 -1 , 1 0 -1 0 -1 1 , -1 0 1 0 1 -1 , -1 0 1 0 -1 1 , 1 0 -1 0 1 -1 , 1 0 1 0 1 -1 , -1 0 -1 0 -1 1 , 
+varray: 23 21 19 17 15 13 11 9 7 5 3 1 -1 -3 -5 -7 -9 -11 -13 -15 -17 -19 -21 -23 
+coeff sum on depths
+144 121 100 81 64 49 36 25 16 9 4 1 
+Is centrally symmetric: 1
+symmetry map prep done
+Symmetry prep loops: 350
+Total Runtime Count subloops: 47365121
+Total Runtime Count mainloops: 6384429
+Time spent: 3.775311
+Best squared length: (86976, 19072)
+Best permutation: 0 8 16 2 10 22 4 18 14 7 21 13 12 20 6 15 19 5 23 11 3 17 9 1 
+
+Number of points: 24
+points:
+-1 1 1 0 1 0 , 1 -1 -1 0 -1 0 , -1 1 1 0 -1 0 , 1 -1 -1 0 1 0 , -1 1 -1 0 1 0 , 1 -1 1 0 -1 0 , 1 -1 1 0 1 0 , -1 1 -1 0 -1 0 , 1 0 -1 1 1 0 , -1 0 1 -1 -1 0 , 1 0 -1 1 -1 0 , -1 0 1 -1 1 0 , -1 0 -1 1 1 0 , 1 0 1 -1 -1 0 , 1 0 1 -1 1 0 , -1 0 -1 1 -1 0 , 1 0 1 0 -1 1 , -1 0 -1 0 1 -1 , 1 0 -1 0 -1 1 , -1 0 1 0 1 -1 , -1 0 1 0 -1 1 , 1 0 -1 0 1 -1 , 1 0 1 0 1 -1 , -1 0 -1 0 -1 1 , 
+varray: 23 21 19 17 15 13 11 9 7 5 3 1 -1 -3 -5 -7 -9 -11 -13 -15 -17 -19 -21 -23 
+coeff sum on depths
+144 121 100 81 64 49 36 25 16 9 4 1 
+Is centrally symmetric: 1
+symmetry map prep done
+Symmetry prep loops: 350
+Total Runtime Count subloops: 47365121
+Total Runtime Count mainloops: 6384429
+Time spent: 3.785941
+Best squared length: (86976, 19072)
+Best permutation: 0 8 16 2 10 22 4 18 14 7 21 13 12 20 6 15 19 5 23 11 3 17 9 1 
+
+Number of points: 30
+points:
+2 2 0 0 0 0 , 0 0 2 2 0 0 , 0 0 0 0 2 2 , 3 1 1 1 2 0 , 3 1 1 1 -2 0 , 3 1 -1 -1 2 0 , 3 1 -1 -1 -2 0 , 2 0 3 1 1 1 , 2 0 3 1 -1 -1 , 2 0 -3 -1 1 1 , 2 0 -3 -1 -1 -1 , 1 1 2 0 3 1 , 1 1 2 0 -3 -1 , 1 1 -2 0 3 1 , 1 1 -2 0 -3 -1 , -2 -2 0 0 0 0 , 0 0 -2 -2 0 0 , 0 0 0 0 -2 -2 , -3 -1 -1 -1 -2 0 , -3 -1 -1 -1 2 0 , -3 -1 1 1 -2 0 , -3 -1 1 1 2 0 , -2 0 -3 -1 -1 -1 , -2 0 -3 -1 1 1 , -2 0 3 1 -1 -1 , -2 0 3 1 1 1 , -1 -1 -2 0 -3 -1 , -1 -1 -2 0 3 1 , -1 -1 2 0 -3 -1 , -1 -1 2 0 3 1 , 
+varray: 29 27 25 23 21 19 17 15 13 11 9 7 5 3 1 -1 -3 -5 -7 -9 -11 -13 -15 -17 -19 -21 -23 -25 -27 -29 
+coeff sum on depths
+225 196 169 144 121 100 81 64 49 36 25 16 9 4 1 
+Is centrally symmetric: 1
+symmetry map prep done
+Symmetry prep loops: 803
+Total Runtime Count subloops: 509988992
+Total Runtime Count mainloops: 2008699268
+Time spent: 1314.517495
+Best squared length: (1879840, 840544)
+Best permutation: 0 5 6 3 13 4 11 9 14 10 12 7 16 2 8 23 17 1 22 27 25 29 24 26 19 28 18 21 20 15 
+

@@ -68,4 +68,5 @@ int main() {
         printf("%d ", bestPermutation[i]);
     }
     printf("\n");
+    puts("");
 }

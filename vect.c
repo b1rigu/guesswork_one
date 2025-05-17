@@ -61,7 +61,7 @@ int vect_comp(const vect v0, const vect v1) {
 void vect_scale(vect *res, const vect point, int coeff, const vect vector) {
     vect tmp;
     for (int j = 0; j < 3; j++) {
-        ring_scale(tmp[j], point[j], coeff);
+        ring_scale(tmp[j], point[j], coeff, coeff);
     }
     vect_add(*res, vector, tmp);
 }
