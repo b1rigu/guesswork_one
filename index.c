@@ -18,7 +18,7 @@ void print_scal(scal value) {
         value = -value;
     }
 
-    char buf[50];  // Enough for 128-bit integer
+    char buf[50];
     int i = 0;
     while (value > 0) {
         buf[i++] = '0' + (value % 10);
@@ -59,6 +59,7 @@ int main() {
 
     ring bestVectorLength = {-1, -1};
 
+    // Currently only works with centrally symmetric shapes
     use_symmetry(numPoints, points, &bestVectorLength, bestPermutation, VArray);
 
     printf("Best squared length: ");
@@ -69,4 +70,10 @@ int main() {
     }
     printf("\n");
     puts("");
+
+    // unsigned _BitInt(9) x = 100;
+    // unsigned _BitInt(9) y = 200;
+    // unsigned _BitInt(9) z = x + y;
+
+    // printf("%u\n", (unsigned)z);  // Output: 300
 }

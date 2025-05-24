@@ -6,9 +6,10 @@
 
 #include "utils.h"
 #include "vect.h"
+#include "ring128.h"
 
-#define MAX_POINTS 50
-#define MAX_SYM_GROUP_SIZE 200
+#define MAX_POINTS 32
+#define MAX_SYM_GROUP_SIZE 120
 
 typedef struct {
     int data[MAX_SYM_GROUP_SIZE];

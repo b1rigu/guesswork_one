@@ -19,8 +19,7 @@ void ring_mul(ring z, const ring x, const ring y) {  // z[0]=x[0]*y[0]+k*x[1]*y[
     if (ckd_mul(&z[1], x[0], y[1]) || ckd_mul(&tmp, x[1], y[0]) || ckd_add(&z[1], z[1], tmp)) exit(1);
 }
 
-void ring_scale(ring z, const ring x, int scale_1, int scale_2) {
-    scal tmp;
+void ring_scale(ring z, const ring x, int64_t scale_1, int64_t scale_2) {
     if (ckd_mul(&z[0], x[0], scale_1) || ckd_mul(&z[1], x[1], scale_2)) exit(1);
 }
 
@@ -38,12 +37,15 @@ int ring_comp(const ring x, const ring y) {
     ring z;
     ring_sub(z, x, y);
 
-    if (ring_sign(z[0]) * ring_sign(z[1]) != -1)
-        return ring_sign(ring_sign(z[0]) + ring_sign(z[1]));
+    int s0 = ring_sign(z[0]);
+    int s1 = ring_sign(z[1]);
+
+    if (s0 * s1 != -1)
+        return ring_sign(s0 + s1);
     else {
         if (ckd_mul(&tmp, z[0], z[0]) || ckd_mul(&z[1], z[1], z[1]) || ckd_mul(&z[1], our_k, z[1]) ||
             ckd_sub(&tmp, tmp, z[1]))
             exit(1);  // tmp=z[0]*z[0]-k*z[1]*z[1]
-        return ring_sign(z[0]) * ring_sign(tmp);
+        return s0 * ring_sign(tmp);
     }
 }

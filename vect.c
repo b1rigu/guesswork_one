@@ -20,25 +20,6 @@ void vect_mul(vect res, const ring x, const vect v) {
     }
 }
 
-void vect_dot(ring res, const vect v0, const vect v1) {
-    res[0] = 0;
-    res[1] = 0;
-    ring temp;
-
-    for (int i = 0; i < 3; ++i) {
-        ring_mul(temp, v0[i], v1[i]);  // temp = vector1[i] * vector2[i]
-        ring_add(res, res, temp);      // res += temp
-    }
-}
-
-void vect_neg(vect res, const vect a)  // res = -a
-{
-    ring zero = {0, 0};
-    for (int i = 0; i < 3; ++i) {
-        ring_sub(res[i], zero, a[i]);
-    }
-}
-
 void vect_norm2(ring res, const vect v)  // v = { {1, 2}, {3, 4}, {5, 6} }
 {
     res[0] = 0;
@@ -50,18 +31,10 @@ void vect_norm2(ring res, const vect v)  // v = { {1, 2}, {3, 4}, {5, 6} }
     }
 }
 
-int vect_comp(const vect v0, const vect v1) {
-    ring norm0;
-    ring norm1;
-    vect_norm2(norm0, v0);
-    vect_norm2(norm1, v1);
-    return ring_comp(norm0, norm1);
-}
-
-void vect_scale(vect *res, const vect point, int coeff, const vect vector) {
+void vect_scale(vect res, const vect point, int coeff, const vect vector) {
     vect tmp;
     for (int j = 0; j < 3; j++) {
         ring_scale(tmp[j], point[j], coeff, coeff);
     }
-    vect_add(*res, vector, tmp);
+    vect_add(res, vector, tmp);
 }

@@ -18,7 +18,12 @@
     "vector": "c",
     "algorithm": "c",
     "stdckdint.h": "c",
-    "cstdlib": "c"
+    "cstdlib": "c",
+    "immintrin.h": "c",
+    "compare": "c",
+    "cstdint": "c",
+    "cpuid.h": "c",
+    "ring128.h": "c"
   },
   "[c]": {
     "editor.defaultFormatter": "ms-vscode.cpptools"
