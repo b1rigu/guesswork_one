@@ -1,8 +1,6 @@
 #ifndef RING128_H
 #define RING128_H
 
-#define our_k 5
-
 #include <stdint.h>
 #include "ring.h"
 

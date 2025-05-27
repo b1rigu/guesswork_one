@@ -23,7 +23,8 @@
     "compare": "c",
     "cstdint": "c",
     "cpuid.h": "c",
-    "ring128.h": "c"
+    "ring128.h": "c",
+    "limits.h": "c"
   },
   "[c]": {
     "editor.defaultFormatter": "ms-vscode.cpptools"

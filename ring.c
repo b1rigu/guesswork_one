@@ -2,25 +2,40 @@
 
 #include <stdckdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 void ring_add(ring z, const ring x, const ring y) {  // z[0]=x[0]+y[0] z[1]=x[1]+y[1]
-    if (ckd_add(&z[0], x[0], y[0]) || ckd_add(&z[1], x[1], y[1])) exit(1);
+    if (ckd_add(&z[0], x[0], y[0]) || ckd_add(&z[1], x[1], y[1])) {
+        printf("Overflow detected adding rings\n");
+        exit(1);
+    }
 }
 
 void ring_sub(ring z, const ring x, const ring y) {  // z[0]=x[0]-y[0] z[1]=x[1]-y[1]
-    if (ckd_sub(&z[0], x[0], y[0]) || ckd_sub(&z[1], x[1], y[1])) exit(1);
+    if (ckd_sub(&z[0], x[0], y[0]) || ckd_sub(&z[1], x[1], y[1])) {
+        printf("Overflow detected subtracting rings\n");
+        exit(1);
+    }
 }
 
 void ring_mul(ring z, const ring x, const ring y) {  // z[0]=x[0]*y[0]+k*x[1]*y[1] z[1]=x[0]*y[1]+y[0]*x[1]
     scal tmp;
     if (ckd_mul(&z[0], x[1], y[1]) || ckd_mul(&z[0], z[0], our_k) || ckd_mul(&tmp, x[0], y[0]) ||
-        ckd_add(&z[0], z[0], tmp))
+        ckd_add(&z[0], z[0], tmp)) {
+        printf("Overflow detected multiplying rings\n");
         exit(1);
-    if (ckd_mul(&z[1], x[0], y[1]) || ckd_mul(&tmp, x[1], y[0]) || ckd_add(&z[1], z[1], tmp)) exit(1);
+    }
+    if (ckd_mul(&z[1], x[0], y[1]) || ckd_mul(&tmp, x[1], y[0]) || ckd_add(&z[1], z[1], tmp)) {
+        printf("Overflow detected multiplying rings\n");
+        exit(1);
+    }
 }
 
 void ring_scale(ring z, const ring x, int64_t scale_1, int64_t scale_2) {
-    if (ckd_mul(&z[0], x[0], scale_1) || ckd_mul(&z[1], x[1], scale_2)) exit(1);
+    if (ckd_mul(&z[0], x[0], scale_1) || ckd_mul(&z[1], x[1], scale_2)) {
+        printf("Overflow detected scaling rings\n");
+        exit(1);
+    }
 }
 
 int ring_sign(const scal x) {
@@ -44,8 +59,10 @@ int ring_comp(const ring x, const ring y) {
         return ring_sign(s0 + s1);
     else {
         if (ckd_mul(&tmp, z[0], z[0]) || ckd_mul(&z[1], z[1], z[1]) || ckd_mul(&z[1], our_k, z[1]) ||
-            ckd_sub(&tmp, tmp, z[1]))
-            exit(1);  // tmp=z[0]*z[0]-k*z[1]*z[1]
+            ckd_sub(&tmp, tmp, z[1])) {
+            printf("Overflow detected comparing rings\n");
+            exit(1);
+        }  // tmp=z[0]*z[0]-k*z[1]*z[1]
         return s0 * ring_sign(tmp);
     }
 }

@@ -3,12 +3,17 @@
 
 #include "symmetry.h"
 #include "utils.h"
+#include <stdckdint.h>
+#include <limits.h>
+
+#define INT128_MAX ((__int128)(((__uint128_t)1 << 127) - 1))
+#define INT128_MIN (-((__int128)(((__uint128_t)1 << 127))))
 
 vect points[MAX_POINTS];
 int bestPermutation[MAX_POINTS];
 int VArray[MAX_POINTS];
 
-void print_scal(scal value) {
+void print_128(__int128_t value) {
     if (value == 0) {
         putchar('0');
         return;
@@ -25,14 +30,6 @@ void print_scal(scal value) {
         value /= 10;
     }
     while (i--) putchar(buf[i]);
-}
-
-void print_ring(const ring r) {
-    printf("(");
-    print_scal(r[0]);
-    printf(", ");
-    print_scal(r[1]);
-    printf(")\n");
 }
 
 int main() {
@@ -63,7 +60,9 @@ int main() {
     use_symmetry(numPoints, points, &bestVectorLength, bestPermutation, VArray);
 
     printf("Best squared length: ");
-    print_ring(bestVectorLength);
+    printf("%lld ", bestVectorLength[0]);
+    printf("%lld ", bestVectorLength[1]);
+    printf("\n");
     printf("Best permutation: ");
     for (int i = 0; i < numPoints; ++i) {
         printf("%d ", bestPermutation[i]);
@@ -76,4 +75,25 @@ int main() {
     // unsigned _BitInt(9) z = x + y;
 
     // printf("%u\n", (unsigned)z);  // Output: 300
+
+    __int128_t a, b, result;
+
+    a = INT128_MAX - 1;
+    b = 1;
+
+    result = a + b;
+
+    print_128(result);
+    printf("\n");
+
+    
+
+    // This will NOT compile if ckd_add doesn't support __int128_t
+    if (ckd_add(&result, a, b)) {
+        printf("Overflow detected\n");
+    } else {
+        print_128(result);
+    }
+
+    printf("Maximum bits for _BitInt: %d\n", BITINT_MAXWIDTH);
 }

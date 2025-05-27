@@ -2,7 +2,6 @@
 
 #include <math.h>
 #include <stdbool.h>
-#include <stdckdint.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,8 +49,7 @@ void addChild(SymmetryMap *node, unsigned char index, SymmetryMap *child) {
     signed char pos = node->children_index_list[index];
 
     if (pos != -1) {
-        // Overwrite existing child
-        node->children[pos] = child;
+        printf("Overwriting child at %d\n", pos);
         return;
     }
 
@@ -74,17 +72,6 @@ static SymmetryMap *getChild(SymmetryMap *node, unsigned char index) {
     signed char pos = node->children_index_list[index];
     if (pos == -1) return NULL;
     return node->children[pos];
-}
-
-void freeSymmetryMap(SymmetryMap *node) {
-    if (!node) return;
-
-    for (int i = 0; i < node->children_count; i++) {
-        freeSymmetryMap(node->children[i]);
-    }
-
-    free(node->children);
-    free(node);
 }
 
 static void precompute_point_norms(const vect *points, int numPoints, ring *pointNorms) {
@@ -141,25 +128,8 @@ static void evaluate_permutation(vect currentScaledVector, int numPoints, ring *
     }
 }
 
-static bool cheap_upper_bound_estimate(int depth, const vect nextScaledVect, const ring *bestVectorLength,
-                                       int32_t *coeff_sum_on_depths, const ring *pointNorms) {
-    ring partial_sum_norm2;
-    vect_norm2(partial_sum_norm2, nextScaledVect);
-
-    const ring *current_max_norm2 = &pointNorms[best_available_index];
-
-    double remaining_coeff = (double)coeff_sum_on_depths[depth + 1];
-
-    double best_sq = (double)(*bestVectorLength)[0] + (double)(*bestVectorLength)[1] * sqrt_our_k;
-    double partial_sq = (double)partial_sum_norm2[0] + (double)partial_sum_norm2[1] * sqrt_our_k;
-    double max_sq = (double)(*current_max_norm2)[0] + (double)(*current_max_norm2)[1] * sqrt_our_k;
-
-    double total_est = sqrt(partial_sq) + remaining_coeff * sqrt(max_sq);
-    return total_est > sqrt(best_sq);
-}
-
 static bool should_check_branch_ub(int depth, const vect nextScaledVect, const ring *bestVectorLength,
-                                   const ring *pointNorms, int32_t *coeff_sum_on_depths) {
+                                   const ring *pointNorms, int32_t *coeff_sum2_on_depths) {
     // ! A = currentbestVectorLength - partial_sum_norm2 - (max_remaining_norm2 * remaining_coeff_2)
     // ! B = 4 * (max_remaining_norm2 * remaining_coeff_2) * partial_sum_norm2
     // ! C = A^2
@@ -170,8 +140,7 @@ static bool should_check_branch_ub(int depth, const vect nextScaledVect, const r
 
     // printf("remaining_coeff: %d\n", remaining_coeff);
 
-    int64_t remaining_coeff = coeff_sum_on_depths[depth + 1];
-    int64_t remaining_coeff_2 = remaining_coeff * remaining_coeff;
+    int64_t remaining_coeff_2 = coeff_sum2_on_depths[depth + 1];
 
     // printf("remaining_coeff2: %d\n", remaining_coeff_2);
 
@@ -223,7 +192,7 @@ void update_best_available_index(bitmask_t used_mask, int numPoints) {
 static void find_best_permutation(int depth, const int numPoints, const vect *points, ring *bestVectorLength,
                                   int *bestPermutation, vect currentScaledVectorAtDepth, int *VArray,
                                   int *currentPermutation, bitmask_t used_mask, SymmetryMap *root,
-                                  MyArray *centralSymmetryList, int32_t *coeff_sum_on_depths, const ring *pointNorms) {
+                                  MyArray *centralSymmetryList, int32_t *coeff_sum2_on_depths, const ring *pointNorms) {
     if (depth == numPoints / 2) {
         evaluate_permutation(currentScaledVectorAtDepth, numPoints, bestVectorLength, bestPermutation,
                              currentPermutation);
@@ -240,13 +209,9 @@ static void find_best_permutation(int depth, const int numPoints, const vect *po
         vect nextVectScaled;
         vect_scale(nextVectScaled, points[candidate], VArray[depth], currentScaledVectorAtDepth);
         if ((*bestVectorLength)[0] != -1 || (*bestVectorLength)[1] != -1) {
-            if (!cheap_upper_bound_estimate(depth, nextVectScaled, bestVectorLength, coeff_sum_on_depths, pointNorms)) {
-                continue;
+            if (!should_check_branch_ub(depth, nextVectScaled, bestVectorLength, pointNorms, coeff_sum2_on_depths)) {
+                continue;  // Skip this branch if upper bound is not promising
             }
-
-            // if (!should_check_branch_ub(depth, nextVectScaled, bestVectorLength, pointNorms, coeff_sum_on_depths)) {
-            //     continue;  // Skip this branch if upper bound is not promising
-            // }
         }
 
         currentPermutation[depth] = candidate;
@@ -259,7 +224,7 @@ static void find_best_permutation(int depth, const int numPoints, const vect *po
         }
 
         find_best_permutation(depth + 1, numPoints, points, bestVectorLength, bestPermutation, nextVectScaled, VArray,
-                              currentPermutation, used_mask, nextChild, centralSymmetryList, coeff_sum_on_depths,
+                              currentPermutation, used_mask, nextChild, centralSymmetryList, coeff_sum2_on_depths,
                               pointNorms);
 
         UNSET_USED(used_mask, candidate);
@@ -328,7 +293,7 @@ static void get_central_symmetry(const int numPoints, const vect *points, MyArra
 
 void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *bestPermutation, int *VArray) {
     ring pointNorms[MAX_POINTS];
-    int32_t coeff_sum_on_depths[MAX_POINTS] = {0};
+    int32_t coeff_sum2_on_depths[MAX_POINTS] = {0};
     bitmask_t used_mask = 0;
     sqrt_our_k = sqrt((double)our_k);
     vect currentScaledVectorAtDepth = {{0, 0}, {0, 0}, {0, 0}};
@@ -358,7 +323,7 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
     int total = 0;
     for (int i = numPoints / 2 - 1; i >= 0; --i) {
         total += VArray[i];
-        coeff_sum_on_depths[i] = total;
+        coeff_sum2_on_depths[i] = total * total;
     }
 
     printf("varray: ");
@@ -367,9 +332,9 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
     }
     printf("\n");
 
-    printf("coeff_sum_on_depths: ");
+    printf("coeff_sum2_on_depths: ");
     for (int i = 0; i < numPoints / 2; ++i) {
-        printf("%d ", coeff_sum_on_depths[i]);
+        printf("%d ", coeff_sum2_on_depths[i]);
     }
     printf("\n");
 
@@ -383,7 +348,7 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
 
     clock_t begin = clock();
     find_best_permutation(0, numPoints, points, bestVectorLength, bestPermutation, currentScaledVectorAtDepth, VArray,
-                          currentPermutation, used_mask, root, &centralSymmetryList, coeff_sum_on_depths, pointNorms);
+                          currentPermutation, used_mask, root, &centralSymmetryList, coeff_sum2_on_depths, pointNorms);
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("Time spent: %f\n", time_spent);
