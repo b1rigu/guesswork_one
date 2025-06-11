@@ -8,6 +8,11 @@
 #include <string.h>
 #include <time.h>
 
+typedef struct {
+    int data[MAX_SYM_GROUP_SIZE];
+    int size;
+} MyArray;
+
 typedef struct SymmetryMap {
     signed char children_index_list[MAX_POINTS];
     unsigned char children_count;
@@ -27,6 +32,82 @@ int best_available_index = 0;
 // row 1 :  table[1*N + 0]  table[1*N + 1] … table[1*N + N-1]
 // row 2 :  ...
 #define SYM_IMAGE(table, row, N, column) ((table)[(size_t)(row) * (N) + (column)])
+
+static bool is_linear_dependant(const int n, const vect point1, const vect point2, const vect point3) {
+    if (n <= 1) {
+        return false;
+    } else if (n == 2) {
+        ring sum, temp1, temp2, temp3;
+        ring_mul(temp1, point1[0], point1[0]);
+        ring_mul(temp2, point1[1], point1[1]);
+        ring_mul(temp3, point1[2], point1[2]);
+        ring_add(sum, temp1, temp2);
+        ring_add(sum, sum, temp3);
+
+        ring sum2;
+        ring_mul(temp1, point2[0], point2[0]);
+        ring_mul(temp2, point2[1], point2[1]);
+        ring_mul(temp3, point2[2], point2[2]);
+        ring_add(sum2, temp1, temp2);
+        ring_add(sum2, sum2, temp3);
+
+        ring left;
+        ring_mul(left, sum, sum2);
+
+        ring_mul(temp1, point1[0], point2[0]);
+        ring_mul(temp2, point1[1], point2[1]);
+        ring_mul(temp3, point1[2], point2[2]);
+        ring_add(sum, temp1, temp2);
+        ring_add(sum, sum, temp3);
+
+        ring right;
+        ring_mul(right, sum, sum);
+
+        ring total;
+        ring_sub(total, left, right);
+
+        ring zero = {0, 0};
+        if (ring_comp(total, zero) == 0) {
+            return true;
+        }
+        return false;
+    } else if (n == 3) {
+        ring first, second, third, fourth, fifth, sixth, temp1, temp2;
+
+        ring_mul(temp1, point1[0], point2[1]);
+        ring_mul(first, temp1, point3[2]);
+
+        ring_mul(temp1, point1[1], point2[2]);
+        ring_mul(second, temp1, point3[0]);
+
+        ring_mul(temp1, point2[0], point3[1]);
+        ring_mul(third, temp1, point1[2]);
+
+        ring_mul(temp1, point1[2], point2[1]);
+        ring_mul(fourth, temp1, point3[0]);
+
+        ring_mul(temp1, point1[1], point2[0]);
+        ring_mul(fifth, temp1, point3[2]);
+
+        ring_mul(temp1, point2[2], point3[1]);
+        ring_mul(sixth, temp1, point1[0]);
+
+        ring total;
+        ring_add(total, first, second);
+        ring_add(total, total, third);
+        ring_sub(total, total, fourth);
+        ring_sub(total, total, fifth);
+        ring_sub(total, total, sixth);
+
+        ring zero = {0, 0};
+        if (ring_comp(total, zero) == 0) {
+            return true;
+        }
+        return false;
+    }
+
+    return true;
+}
 
 SymmetryMap *createNode() {
     SymmetryMap *node = malloc(sizeof(SymmetryMap));
@@ -49,7 +130,7 @@ void addChild(SymmetryMap *node, unsigned char index, SymmetryMap *child) {
     signed char pos = node->children_index_list[index];
 
     if (pos != -1) {
-        printf("Overwriting child at %d\n", pos);
+        printf("Tried to overwrite child at pos: %d\n", pos);
         return;
     }
 
@@ -80,43 +161,6 @@ static void precompute_point_norms(const vect *points, int numPoints, ring *poin
     }
 }
 
-static void get_next_nodes_to_explore(const int numPoints, const int *symIndexListToSearch,
-                                      const int symIndexListToSearchLength, MyArray *out, bool *alreadyUsedNodes,
-                                      int *symmetryGroup) {
-    out->size = 0;
-
-    bool inSomeOrbit[MAX_POINTS] = {false};
-    bool isFirstOrbit = true;
-    for (int col = 0; col < numPoints; ++col) {
-        if (!alreadyUsedNodes[col] && !inSomeOrbit[col]) {
-            out->data[out->size++] = col;
-            inSomeOrbit[col] = true;
-
-            for (int i = 0; i < symIndexListToSearchLength; ++i) {
-                int symIdx = symIndexListToSearch[i];
-                int image = SYM_IMAGE(symmetryGroup, symIdx, numPoints, col);
-                if (isFirstOrbit || image == col) {
-                    inSomeOrbit[image] = true;
-                }
-            }
-            isFirstOrbit = false;
-        }
-    }
-};
-
-static void get_next_symmetry_group(const int *symIndexListToSearch, int symIndexListToSearchLength, int numPoints,
-                                    int chosen, MyArray *out, int *symmetryGroup) {
-    out->size = 0;
-
-    for (int i = 0; i < symIndexListToSearchLength; ++i) {
-        int idx = symIndexListToSearch[i];
-        int img = SYM_IMAGE(symmetryGroup, idx, numPoints, chosen);
-        if (img == chosen) {
-            out->data[out->size++] = idx;
-        }
-    }
-}
-
 static void evaluate_permutation(vect currentScaledVector, int numPoints, ring *bestVectorLength, int *bestPermutation,
                                  int *currentPermutation) {
     ring currentSquared;
@@ -138,11 +182,7 @@ static bool should_check_branch_ub(int depth, const vect nextScaledVect, const r
     bigring partial_sum_norm2_big;
     ring_to_bigring(partial_sum_norm2_big, partial_sum_norm2);
 
-    // printf("remaining_coeff: %d\n", remaining_coeff);
-
     int64_t remaining_coeff_2 = coeff_sum2_on_depths[depth + 1];
-
-    // printf("remaining_coeff2: %d\n", remaining_coeff_2);
 
     const ring *current_max_norm2 = &pointNorms[best_available_index];
 
@@ -151,16 +191,12 @@ static bool should_check_branch_ub(int depth, const vect nextScaledVect, const r
     ring_to_bigring(current_max_norm2_big, *current_max_norm2);
     bigring_scale(lmax_norm2_mulby_coeff, current_max_norm2_big, remaining_coeff_2, remaining_coeff_2);
 
-    // printf("lmax_norm2_mulby_coeff: (%lld, %lld)\n", lmax_norm2_mulby_coeff[0], lmax_norm2_mulby_coeff[1]);
-
     // * A = currentbestVectorLength - partial_sum_norm2 - (max_remaining_norm2 * remaining_coeff_2)
     bigring sub_of_abc;
     bigring bestVectorLength_big;
     ring_to_bigring(bestVectorLength_big, *bestVectorLength);
     bigring_sub(sub_of_abc, bestVectorLength_big, partial_sum_norm2_big);
     bigring_sub(sub_of_abc, sub_of_abc, lmax_norm2_mulby_coeff);
-
-    // printf("sub_of_abc: (%lld, %lld)\n", sub_of_abc[0], sub_of_abc[1]);
 
     bigring zero = {0, 0};
     if (bigring_comp(sub_of_abc, zero) < 0) {
@@ -172,13 +208,9 @@ static bool should_check_branch_ub(int depth, const vect nextScaledVect, const r
     bigring_mul(B, lmax_norm2_mulby_coeff, partial_sum_norm2_big);
     bigring_scale(B, B, 4, 4);
 
-    // printf("B: (%lld, %lld)\n", B[0], B[1]);
-
     // * C = A^2
     bigring sub_of_abc_squared;
     bigring_mul(sub_of_abc_squared, sub_of_abc, sub_of_abc);
-
-    // printf("sub_of_abc_squared: (%lld, %lld)\n", sub_of_abc_squared[0], sub_of_abc_squared[1]);
 
     return bigring_comp(B, sub_of_abc_squared) > 0;
 }
@@ -235,13 +267,46 @@ static void find_best_permutation(int depth, const int numPoints, const vect *po
     }
 }
 
+static void get_next_nodes_to_explore(const int numPoints, const int *symIndexListToSearch,
+                                      const int symIndexListToSearchLength, MyArray *out, bool *alreadyUsedNodes,
+                                      int *symmetryGroup) {
+    out->size = 0;
+
+    bool inSomeOrbit[MAX_POINTS] = {false};
+    bool isFirstOrbit = true;
+    for (int col = 0; col < numPoints; ++col) {
+        if (!alreadyUsedNodes[col] && !inSomeOrbit[col]) {
+            out->data[out->size++] = col;
+            inSomeOrbit[col] = true;
+
+            for (int i = 0; i < symIndexListToSearchLength; ++i) {
+                int symIdx = symIndexListToSearch[i];
+                int image = SYM_IMAGE(symmetryGroup, symIdx, numPoints, col);
+                if (isFirstOrbit || image == col) {
+                    inSomeOrbit[image] = true;
+                }
+            }
+            isFirstOrbit = false;
+        }
+    }
+};
+
+static void get_next_symmetry_group(const int *symIndexListToSearch, int symIndexListToSearchLength, int numPoints,
+                                    int chosen, MyArray *out, int *symmetryGroup) {
+    out->size = 0;
+
+    for (int i = 0; i < symIndexListToSearchLength; ++i) {
+        int idx = symIndexListToSearch[i];
+        int img = SYM_IMAGE(symmetryGroup, idx, numPoints, chosen);
+        if (img == chosen) {
+            out->data[out->size++] = idx;
+        }
+    }
+}
+
 static void prepare_symmetry_graph(const int numPoints, const int *symIndexListToSearch,
                                    const int symIndexListToSearchLength, bool *alreadyUsedNodes, int *symmetryGroup,
-                                   SymmetryMap *root) {
-    if (symIndexListToSearchLength == 1) {
-        return;
-    }
-
+                                   SymmetryMap *root, int depth, const vect *points, int *permutationTracker) {
     MyArray nodes_to_explore;
     get_next_nodes_to_explore(numPoints, symIndexListToSearch, symIndexListToSearchLength, &nodes_to_explore,
                               alreadyUsedNodes, symmetryGroup);
@@ -250,16 +315,27 @@ static void prepare_symmetry_graph(const int numPoints, const int *symIndexListT
         int nextChosen = nodes_to_explore.data[i];
         alreadyUsedNodes[nextChosen] = true;
 
-        MyArray nextSymIndexList;
-        get_next_symmetry_group(symIndexListToSearch, symIndexListToSearchLength, numPoints, nextChosen,
-                                &nextSymIndexList, symmetryGroup);
+        if (depth == 1 && is_linear_dependant(2, points[permutationTracker[0]], points[nextChosen], NULL)) {
+            addChild(root, nextChosen, root);
+        } else if (depth == 2 && is_linear_dependant(3, points[permutationTracker[0]], points[permutationTracker[1]],
+                                                     points[nextChosen])) {
+            addChild(root, nextChosen, root);
+        } else if (depth == 3) {
+            addChild(root, nextChosen, root);
+        } else {
+            MyArray nextSymIndexList;
+            get_next_symmetry_group(symIndexListToSearch, symIndexListToSearchLength, numPoints, nextChosen,
+                                    &nextSymIndexList, symmetryGroup);
 
-        SymmetryMap *child = createNode();
+            permutationTracker[depth] = nextChosen;
 
-        addChild(root, nextChosen, child);
+            SymmetryMap *child = createNode();
 
-        prepare_symmetry_graph(numPoints, nextSymIndexList.data, nextSymIndexList.size, alreadyUsedNodes, symmetryGroup,
-                               child);
+            addChild(root, nextChosen, child);
+
+            prepare_symmetry_graph(numPoints, nextSymIndexList.data, nextSymIndexList.size, alreadyUsedNodes,
+                                   symmetryGroup, child, depth + 1, points, permutationTracker);
+        }
 
         alreadyUsedNodes[nextChosen] = false;
     }
@@ -342,9 +418,20 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
     get_central_symmetry(numPoints, points, &centralSymmetryList);
     printf("Is centrally symmetric: %d\n", centralSymmetryList.size != 0);
 
+    int permutationTracker[MAX_POINTS] = {-1};
     SymmetryMap *root = createNode();
-    prepare_symmetry_graph(numPoints, symIndexListToSearch, symmetryGroupSize, alreadyUsedNodes, symmetryGroup, root);
+    prepare_symmetry_graph(numPoints, symIndexListToSearch, symmetryGroupSize, alreadyUsedNodes, symmetryGroup, root, 0,
+                           points, permutationTracker);
     printf("symmetry map prep done\n");
+
+    printf("Root: %d\n", root);
+    printf("root->a: %d\n", root->children[0]);
+    printf("root->a children_count: %d\n", root->children[0]->children_count);
+    printf("root->a->c: %d\n", root->children[0]->children[1]);
+    printf("root->a->b: %d\n", root->children[0]->children[0]);
+    printf("root->a->b children_count: %d\n", root->children[0]->children[0]->children_count);
+    printf("root->a->b->c: %d\n", root->children[0]->children[0]->children[0]);
+    printf("root->a->b->d: %d\n", root->children[0]->children[0]->children[1]);
 
     clock_t begin = clock();
     find_best_permutation(0, numPoints, points, bestVectorLength, bestPermutation, currentScaledVectorAtDepth, VArray,
