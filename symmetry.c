@@ -2,11 +2,12 @@
 
 #include <math.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "ring128.h"
+#include "utils.h"
 
 typedef struct {
     int data[MAX_SYM_GROUP_SIZE];
@@ -21,7 +22,6 @@ typedef struct SymmetryMap {
 
 typedef __uint64_t bitmask_t;
 
-static double sqrt_our_k = 0.0;
 int best_available_index = 0;
 
 #define IS_USED(mask, i) (((mask) >> (i)) & 1)
@@ -367,52 +367,44 @@ static void get_central_symmetry(const int numPoints, const vect *points, MyArra
     }
 }
 
-void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *bestPermutation, int *VArray) {
-    ring pointNorms[MAX_POINTS];
-    int32_t coeff_sum2_on_depths[MAX_POINTS] = {0};
-    bitmask_t used_mask = 0;
-    sqrt_our_k = sqrt((double)our_k);
-    vect currentScaledVectorAtDepth = {{0, 0}, {0, 0}, {0, 0}};
-    bool alreadyUsedNodes[MAX_POINTS] = {false};
-    int currentPermutation[MAX_POINTS] = {0};
-    int symmetryGroup[MAX_POINTS * MAX_SYM_GROUP_SIZE];
-    precompute_point_norms(points, numPoints, pointNorms);
+static void generate_zero_sum_array(int numPoints, int *VArray) {
+    int start = (numPoints - 1) * 1;  // largest positive value
+    for (int i = 0; i < numPoints; ++i) {
+        VArray[i] = start - 2 * i;
+    }
+}
 
+void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *bestPermutation) {
+    int symmetryGroup[MAX_POINTS * MAX_SYM_GROUP_SIZE];
     int symmetryGroupSize = nextInt();
     for (int g = 0; g < symmetryGroupSize; g++) {
         for (int i = 0; i < numPoints; i++) {
             symmetryGroup[g * numPoints + i] = nextInt();
         }
     }
-    int symIndexListToSearch[MAX_SYM_GROUP_SIZE];
-    for (int g = 0; g < symmetryGroupSize; ++g) {
-        symIndexListToSearch[g] = g;
-    }
 
-    printf("point norms precomputed\n");
-    for (int i = 0; i < numPoints; ++i) {
-        printf("%d ", pointNorms[i][0]);
-        printf("%d ", pointNorms[i][1]);
-        printf("\n");
-    }
+    int VArray[MAX_POINTS];
+    generate_zero_sum_array(numPoints, VArray);
 
+    ring pointNorms[MAX_POINTS];
+    precompute_point_norms(points, numPoints, pointNorms);
+
+    int32_t coeff_sum2_on_depths[MAX_POINTS] = {0};
     int total = 0;
     for (int i = numPoints / 2 - 1; i >= 0; --i) {
         total += VArray[i];
         coeff_sum2_on_depths[i] = total * total;
     }
-
-    printf("varray: ");
-    for (int i = 0; i < numPoints; ++i) {
-        printf("%d ", VArray[i]);
+    
+    int symIndexListToSearch[MAX_SYM_GROUP_SIZE];
+    for (int g = 0; g < symmetryGroupSize; ++g) {
+        symIndexListToSearch[g] = g;
     }
-    printf("\n");
 
-    printf("coeff_sum2_on_depths: ");
-    for (int i = 0; i < numPoints / 2; ++i) {
-        printf("%d ", coeff_sum2_on_depths[i]);
-    }
-    printf("\n");
+    bitmask_t used_mask = 0;
+    vect currentScaledVectorAtDepth = {{0, 0}, {0, 0}, {0, 0}};
+    bool alreadyUsedNodes[MAX_POINTS] = {false};
+    int currentPermutation[MAX_POINTS] = {0};
 
     MyArray centralSymmetryList;
     get_central_symmetry(numPoints, points, &centralSymmetryList);
@@ -423,15 +415,6 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
     prepare_symmetry_graph(numPoints, symIndexListToSearch, symmetryGroupSize, alreadyUsedNodes, symmetryGroup, root, 0,
                            points, permutationTracker);
     printf("symmetry map prep done\n");
-
-    printf("Root: %d\n", root);
-    printf("root->a: %d\n", root->children[0]);
-    printf("root->a children_count: %d\n", root->children[0]->children_count);
-    printf("root->a->c: %d\n", root->children[0]->children[1]);
-    printf("root->a->b: %d\n", root->children[0]->children[0]);
-    printf("root->a->b children_count: %d\n", root->children[0]->children[0]->children_count);
-    printf("root->a->b->c: %d\n", root->children[0]->children[0]->children[0]);
-    printf("root->a->b->d: %d\n", root->children[0]->children[0]->children[1]);
 
     clock_t begin = clock();
     find_best_permutation(0, numPoints, points, bestVectorLength, bestPermutation, currentScaledVectorAtDepth, VArray,

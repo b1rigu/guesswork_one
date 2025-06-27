@@ -1,6 +1,5 @@
 #ifndef UTILS_H
 #define UTILS_H
-#define MAX_SIZE 100
 
 #include <stdio.h>
 
@@ -9,7 +8,5 @@ int nextInt();
 
 // Function to safely read a long long integer from input
 long long nextLL();
-
-void generate_zero_sum_array(int numPoints, int *VArray);
 
 #endif
