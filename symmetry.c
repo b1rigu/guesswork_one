@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 #include "ring128.h"
 #include "utils.h"
 
@@ -20,9 +21,14 @@ typedef struct SymmetryMap {
     struct SymmetryMap **children;
 } SymmetryMap;
 
-typedef __uint64_t bitmask_t;
+typedef struct {
+    ring norm;
+    int original_index;
+} NormRingWithIndex;
 
-int best_available_index = 0;
+NormRingWithIndex sortedRings[MAX_POINTS];
+
+typedef __uint64_t bitmask_t;
 
 #define IS_USED(mask, i) (((mask) >> (i)) & 1)
 #define SET_USED(mask, i) ((mask) |= ((bitmask_t)1 << (i)))
@@ -155,10 +161,29 @@ static SymmetryMap *getChild(SymmetryMap *node, unsigned char index) {
     return node->children[pos];
 }
 
-static void precompute_point_norms(const vect *points, int numPoints, ring *pointNorms) {
+int compare_ring_desc(const void *a, const void *b) {
+    const NormRingWithIndex *ra = (const NormRingWithIndex *)a;
+    const NormRingWithIndex *rb = (const NormRingWithIndex *)b;
+    return -ring_comp(ra->norm, rb->norm);  // descending order
+}
+
+void precompute_sorted_norms(const vect *points, int numPoints, NormRingWithIndex *outRings) {
     for (int i = 0; i < numPoints; ++i) {
-        vect_norm2(pointNorms[i], points[i]);  // assumes vect_norm2(dest, vect)
+        vect_norm2(outRings[i].norm, points[i]);
+        outRings[i].original_index = i;
     }
+
+    qsort(outRings, numPoints, sizeof(NormRingWithIndex), compare_ring_desc);
+}
+
+const ring *get_best_unused_ring(uint64_t used_mask, const NormRingWithIndex *sortedRings, int numPoints) {
+    for (int i = 0; i < numPoints; ++i) {
+        int idx = sortedRings[i].original_index;
+        if (!IS_USED(used_mask, idx)) {
+            return &sortedRings[i].norm;
+        }
+    }
+    return NULL;
 }
 
 static void evaluate_permutation(vect currentScaledVector, int numPoints, ring *bestVectorLength, int *bestPermutation,
@@ -173,7 +198,7 @@ static void evaluate_permutation(vect currentScaledVector, int numPoints, ring *
 }
 
 static bool should_check_branch_ub(int depth, const vect nextScaledVect, const ring *bestVectorLength,
-                                   const ring *pointNorms, int32_t *coeff_sum2_on_depths) {
+                                   int32_t *coeff_sum2_on_depths, bitmask_t used_mask, int numPoints) {
     // ! A = currentbestVectorLength - partial_sum_norm2 - (max_remaining_norm2 * remaining_coeff_2)
     // ! B = 4 * (max_remaining_norm2 * remaining_coeff_2) * partial_sum_norm2
     // ! C = A^2
@@ -184,7 +209,7 @@ static bool should_check_branch_ub(int depth, const vect nextScaledVect, const r
 
     int64_t remaining_coeff_2 = coeff_sum2_on_depths[depth + 1];
 
-    const ring *current_max_norm2 = &pointNorms[best_available_index];
+    const ring *current_max_norm2 = get_best_unused_ring(used_mask, sortedRings, numPoints);
 
     bigring lmax_norm2_mulby_coeff;
     bigring current_max_norm2_big;
@@ -215,25 +240,23 @@ static bool should_check_branch_ub(int depth, const vect nextScaledVect, const r
     return bigring_comp(B, sub_of_abc_squared) > 0;
 }
 
-void update_best_available_index(bitmask_t used_mask, int numPoints) {
-    while (best_available_index < numPoints / 2 && IS_USED(used_mask, best_available_index)) {
-        ++best_available_index;
-    }
-}
-
 static void find_best_permutation(int depth, const int numPoints, const vect *points, ring *bestVectorLength,
                                   int *bestPermutation, vect currentScaledVectorAtDepth, int *VArray,
                                   int *currentPermutation, bitmask_t used_mask, SymmetryMap *root,
-                                  MyArray *centralSymmetryList, int32_t *coeff_sum2_on_depths, const ring *pointNorms) {
-    if (depth == numPoints / 2) {
+                                  MyArray *centralSymmetryList, int32_t *coeff_sum2_on_depths) {
+    if (depth == numPoints || (centralSymmetryList->size != 0 && depth == numPoints / 2)) {
         evaluate_permutation(currentScaledVectorAtDepth, numPoints, bestVectorLength, bestPermutation,
                              currentPermutation);
         return;
     }
 
     for (int candidate = 0; candidate < numPoints; ++candidate) {
-        int mirror = centralSymmetryList->data[candidate];
-        if (IS_USED(used_mask, candidate) || IS_USED(used_mask, mirror)) continue;
+        if (IS_USED(used_mask, candidate)) continue;
+        int mirror = -1;
+        if (centralSymmetryList->size != 0) {
+            mirror = centralSymmetryList->data[candidate];
+            if (IS_USED(used_mask, mirror)) continue;
+        }
 
         SymmetryMap *nextChild = getChild(root, candidate);
         if (root != NULL && root->children_count > 0 && nextChild == NULL) continue;
@@ -241,28 +264,28 @@ static void find_best_permutation(int depth, const int numPoints, const vect *po
         vect nextVectScaled;
         vect_scale(nextVectScaled, points[candidate], VArray[depth], currentScaledVectorAtDepth);
         if ((*bestVectorLength)[0] != -1 || (*bestVectorLength)[1] != -1) {
-            if (!should_check_branch_ub(depth, nextVectScaled, bestVectorLength, pointNorms, coeff_sum2_on_depths)) {
-                continue;  // Skip this branch if upper bound is not promising
+            if (!should_check_branch_ub(depth, nextVectScaled, bestVectorLength, coeff_sum2_on_depths, used_mask,
+                                        numPoints)) {
+                continue;
             }
         }
 
         currentPermutation[depth] = candidate;
-        currentPermutation[numPoints - 1 - depth] = mirror;
+        if (mirror != -1) {
+            currentPermutation[numPoints - 1 - depth] = mirror;
+        }
 
         SET_USED(used_mask, candidate);
-        SET_USED(used_mask, mirror);
-        if (candidate == best_available_index) {
-            update_best_available_index(used_mask, numPoints);
+        if (mirror != -1) {
+            SET_USED(used_mask, mirror);
         }
 
         find_best_permutation(depth + 1, numPoints, points, bestVectorLength, bestPermutation, nextVectScaled, VArray,
-                              currentPermutation, used_mask, nextChild, centralSymmetryList, coeff_sum2_on_depths,
-                              pointNorms);
+                              currentPermutation, used_mask, nextChild, centralSymmetryList, coeff_sum2_on_depths);
 
         UNSET_USED(used_mask, candidate);
-        UNSET_USED(used_mask, mirror);
-        if (candidate < best_available_index) {
-            best_available_index = candidate;
+        if (mirror != -1) {
+            UNSET_USED(used_mask, mirror);
         }
     }
 }
@@ -385,9 +408,8 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
 
     int VArray[MAX_POINTS];
     generate_zero_sum_array(numPoints, VArray);
-
-    ring pointNorms[MAX_POINTS];
-    precompute_point_norms(points, numPoints, pointNorms);
+    
+    precompute_sorted_norms(points, numPoints, sortedRings);
 
     int32_t coeff_sum2_on_depths[MAX_POINTS] = {0};
     int total = 0;
@@ -395,7 +417,19 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
         total += VArray[i];
         coeff_sum2_on_depths[i] = total * total;
     }
-    
+
+    printf("varray: ");
+    for (int i = 0; i < numPoints; ++i) {
+        printf("%d ", VArray[i]);
+    }
+    printf("\n");
+
+    printf("coeff_sum2_on_depths: ");
+    for (int i = 0; i < numPoints; ++i) {
+        printf("%d ", coeff_sum2_on_depths[i]);
+    }
+    printf("\n");
+
     int symIndexListToSearch[MAX_SYM_GROUP_SIZE];
     for (int g = 0; g < symmetryGroupSize; ++g) {
         symIndexListToSearch[g] = g;
@@ -418,7 +452,7 @@ void use_symmetry(int numPoints, vect *points, ring *bestVectorLength, int *best
 
     clock_t begin = clock();
     find_best_permutation(0, numPoints, points, bestVectorLength, bestPermutation, currentScaledVectorAtDepth, VArray,
-                          currentPermutation, used_mask, root, &centralSymmetryList, coeff_sum2_on_depths, pointNorms);
+                          currentPermutation, used_mask, root, &centralSymmetryList, coeff_sum2_on_depths);
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("Time spent: %f\n", time_spent);
