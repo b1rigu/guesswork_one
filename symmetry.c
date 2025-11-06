@@ -12,6 +12,9 @@
 // row 2 :  ...
 #define SYM_IMAGE(table, row, N, column) ((table)[(size_t)(row) * (N) + (column)])
 
+///
+/// This function checks if points have linear dependancy or not
+///
 static bool is_linear_dependant(const int n, const vect point1, const vect point2, const vect point3) {
     if (n <= 1) {
         return false;

@@ -205,6 +205,8 @@ int main() {
         coeff_sum2_on_depths[numPoints - 1 - i] = coeff_sum2_on_depths[i];
     }
 
+    printf("\n\n Number of points: %d \n", numPoints);
+
     printf("varray: ");
     for (int i = 0; i < numPoints; ++i) {
         printf("%d ", VArray[i]);
