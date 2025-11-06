@@ -51,25 +51,25 @@ static bool is_linear_dependant(const int n, const vect point1, const vect point
         }
         return false;
     } else if (n == 3) {
-        ring first, second, third, fourth, fifth, sixth, temp1, temp2;
+        ring first, second, third, fourth, fifth, sixth, temp;
 
-        ring_mul(temp1, point1[0], point2[1]);
-        ring_mul(first, temp1, point3[2]);
+        ring_mul(temp, point1[0], point2[1]);
+        ring_mul(first, temp, point3[2]);
 
-        ring_mul(temp1, point1[1], point2[2]);
-        ring_mul(second, temp1, point3[0]);
+        ring_mul(temp, point1[1], point2[2]);
+        ring_mul(second, temp, point3[0]);
 
-        ring_mul(temp1, point2[0], point3[1]);
-        ring_mul(third, temp1, point1[2]);
+        ring_mul(temp, point2[0], point3[1]);
+        ring_mul(third, temp, point1[2]);
 
-        ring_mul(temp1, point1[2], point2[1]);
-        ring_mul(fourth, temp1, point3[0]);
+        ring_mul(temp, point1[2], point2[1]);
+        ring_mul(fourth, temp, point3[0]);
 
-        ring_mul(temp1, point1[1], point2[0]);
-        ring_mul(fifth, temp1, point3[2]);
+        ring_mul(temp, point1[1], point2[0]);
+        ring_mul(fifth, temp, point3[2]);
 
-        ring_mul(temp1, point2[2], point3[1]);
-        ring_mul(sixth, temp1, point1[0]);
+        ring_mul(temp, point2[2], point3[1]);
+        ring_mul(sixth, temp, point1[0]);
 
         ring total;
         ring_add(total, first, second);

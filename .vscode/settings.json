@@ -26,7 +26,8 @@
     "ring128.h": "c",
     "limits.h": "c",
     "sysinfo.h": "c",
-    "unistd.h": "c"
+    "unistd.h": "c",
+    "stdint.h": "c"
   },
   "[c]": {
     "editor.defaultFormatter": "ms-vscode.cpptools"

@@ -2,8 +2,8 @@
 #include <stdckdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
+#include <time.h>
 
 #include "ring128.h"
 #include "symmetry.h"
@@ -95,6 +95,7 @@ static void evaluate_permutation(vect currentScaledVector, int numPoints, ring* 
     }
 }
 
+// * centralSymmetryList->size != 0 equals to the states having central symmetry
 static void find_best_permutation(int depth, const int numPoints, const vect* points, ring* bestVectorLength,
                                   int* bestPermutation, vect currentScaledVectorAtDepth, int* VArray,
                                   int* currentPermutation, bitmask_t used_mask, SymmetryMap* root,
@@ -172,7 +173,7 @@ static void get_central_symmetry(const int numPoints, const vect* points, MyArra
 }
 
 static void generate_zero_sum_array(int numPoints, int* VArray) {
-    int start = (numPoints - 1) * 1;  // largest positive value
+    int start = numPoints - 1;
     for (int i = 0; i < numPoints; ++i) {
         VArray[i] = start - 2 * i;
     }
@@ -180,8 +181,6 @@ static void generate_zero_sum_array(int numPoints, int* VArray) {
 
 int main() {
     vect points[MAX_POINTS];
-    int bestPermutation[MAX_POINTS];
-
     int numPoints = nextInt();
     for (int i = 0; i < numPoints; i++) {
         for (int j = 0; j < 3; j++) {
@@ -190,9 +189,10 @@ int main() {
         }
     }
 
+    int bestPermutation[MAX_POINTS];
     int VArray[MAX_POINTS];
-    generate_zero_sum_array(numPoints, VArray);
 
+    generate_zero_sum_array(numPoints, VArray);
     precompute_sorted_norms(points, numPoints, sortedRings);
 
     int32_t coeff_sum2_on_depths[MAX_POINTS] = {0};
@@ -200,6 +200,9 @@ int main() {
     for (int i = numPoints / 2 - 1; i >= 0; --i) {
         total += VArray[i];
         coeff_sum2_on_depths[i] = total * total;
+    }
+    for (int i = 0; i < numPoints / 2; ++i) {
+        coeff_sum2_on_depths[numPoints - 1 - i] = coeff_sum2_on_depths[i];
     }
 
     printf("varray: ");
