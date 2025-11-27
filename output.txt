@@ -207,3 +207,53 @@ symmetry map prep done
 Time spent: 3.205233
 Best squared length: 86976 19072 
 Best permutation: 0 8 16 2 10 22 4 18 14 7 21 13 12 20 6 15 19 5 23 11 3 17 9 1 
+
+
+ Number of points: 24 
+varray: 23 21 19 17 15 13 11 9 7 5 3 1 -1 -3 -5 -7 -9 -11 -13 -15 -17 -19 -21 -23 
+coeff_sum2_on_depths: 20736 14641 10000 6561 4096 2401 1296 625 256 81 16 1 1 16 81 256 625 1296 2401 4096 6561 10000 14641 20736 
+Is centrally symmetric: 1
+symmetry map prep done
+Time spent: 4.315536
+Best squared length: 86976 19072 
+Best permutation: 0 8 16 2 10 22 4 18 14 7 21 13 12 20 6 15 19 5 23 11 3 17 9 1 
+
+
+ Number of points: 24 
+varray: 23 21 19 17 15 13 11 9 7 5 3 1 -1 -3 -5 -7 -9 -11 -13 -15 -17 -19 -21 -23 
+coeff_sum2_on_depths: 20736 14641 10000 6561 4096 2401 1296 625 256 81 16 1 1 16 81 256 625 1296 2401 4096 6561 10000 14641 20736 
+Is centrally symmetric: 1
+symmetry map prep done
+Time spent: 4.310902
+Best squared length: 86976 19072 
+Best permutation: 0 8 16 2 10 22 4 18 14 7 21 13 12 20 6 15 19 5 23 11 3 17 9 1 
+
+
+ Number of points: 24 
+varray: 23 21 19 17 15 13 11 9 7 5 3 1 -1 -3 -5 -7 -9 -11 -13 -15 -17 -19 -21 -23 
+coeff_sum2_on_depths: 20736 14641 10000 6561 4096 2401 1296 625 256 81 16 1 1 16 81 256 625 1296 2401 4096 6561 10000 14641 20736 
+Is centrally symmetric: 1
+symmetry map prep done
+Time spent: 4.321330
+Best squared length: 86976 19072 
+Best permutation: 0 8 16 2 10 22 4 18 14 7 21 13 12 20 6 15 19 5 23 11 3 17 9 1 
+
+
+ Number of points: 24 
+varray: 23 21 19 17 15 13 11 9 7 5 3 1 -1 -3 -5 -7 -9 -11 -13 -15 -17 -19 -21 -23 
+coeff_sum2_on_depths: 20736 14641 10000 6561 4096 2401 1296 625 256 81 16 1 1 16 81 256 625 1296 2401 4096 6561 10000 14641 20736 
+Is centrally symmetric: 1
+symmetry map prep done
+Time spent: 4.351615
+Best squared length: 86976 19072 
+Best permutation: 0 8 16 2 10 22 4 18 14 7 21 13 12 20 6 15 19 5 23 11 3 17 9 1 
+
+
+ Number of points: 24 
+varray: 23 21 19 17 15 13 11 9 7 5 3 1 -1 -3 -5 -7 -9 -11 -13 -15 -17 -19 -21 -23 
+coeff_sum2_on_depths: 20736 14641 10000 6561 4096 2401 1296 625 256 81 16 1 1 16 81 256 625 1296 2401 4096 6561 10000 14641 20736 
+Is centrally symmetric: 1
+symmetry map prep done
+Time spent: 4.312696
+Best squared length: 86976 19072 
+Best permutation: 0 8 16 2 10 22 4 18 14 7 21 13 12 20 6 15 19 5 23 11 3 17 9 1 
