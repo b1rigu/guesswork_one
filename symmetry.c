@@ -12,9 +12,6 @@
 // row 2 :  ...
 #define SYM_IMAGE(table, row, N, column) ((table)[(size_t)(row) * (N) + (column)])
 
-///
-/// This function checks if points have linear dependancy or not
-///
 static bool is_linear_dependant(const int n, const vect point1, const vect point2, const vect point3) {
     if (n <= 1) {
         return false;
@@ -113,7 +110,7 @@ static void addChild(SymmetryMap *node, unsigned char index, SymmetryMap *child)
 
     if (pos != -1) {
         printf("Tried to overwrite child at pos: %d\n", pos);
-        return;
+        exit(1);
     }
 
     // Add new child
@@ -214,15 +211,13 @@ static void prepare_symmetry_graph(const int numPoints, const int *symIndexListT
 SymmetryMap *get_symmetry_explore_map(int numPoints, vect *points) {
     int symmetryGroup[MAX_POINTS * MAX_SYM_GROUP_SIZE];
     int symmetryGroupSize = nextInt();
+    int symIndexListToSearch[MAX_SYM_GROUP_SIZE];
+
     for (int g = 0; g < symmetryGroupSize; g++) {
+        symIndexListToSearch[g] = g;
         for (int i = 0; i < numPoints; i++) {
             symmetryGroup[g * numPoints + i] = nextInt();
         }
-    }
-
-    int symIndexListToSearch[MAX_SYM_GROUP_SIZE];
-    for (int g = 0; g < symmetryGroupSize; ++g) {
-        symIndexListToSearch[g] = g;
     }
     
     bool alreadyUsedNodes[MAX_POINTS] = {false};
